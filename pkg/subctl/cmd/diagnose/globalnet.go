@@ -63,18 +63,18 @@ func checkGlobalnet(cluster *cmd.Cluster) bool {
 
 	tracker := reporter.NewTracker(status)
 
-	checkClusterGlobalEgressIps(cluster, tracker)
-	checkGlobalEgressIps(cluster, tracker)
-	checkGlobalIngressIps(cluster, tracker)
+	checkClusterGlobalEgressIPs(cluster, tracker)
+	checkGlobalEgressIPs(cluster, tracker)
+	checkGlobalIngressIPs(cluster, tracker)
 
 	if !tracker.HasFailures() {
-		status.EndWithSuccess("Globalnet is enabled and properly configured")
+		status.Success("Globalnet is properly configured and functioning")
 	}
 
 	return !tracker.HasFailures()
 }
 
-func checkClusterGlobalEgressIps(cluster *cmd.Cluster, status reporter.Interface) {
+func checkClusterGlobalEgressIPs(cluster *cmd.Cluster, status reporter.Interface) {
 	clusterGlobalEgress, err := cluster.SubmClient.SubmarinerV1().ClusterGlobalEgressIPs(
 		corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
@@ -84,7 +84,7 @@ func checkClusterGlobalEgressIps(cluster *cmd.Cluster, status reporter.Interface
 
 	if len(clusterGlobalEgress.Items) != 1 {
 		status.Failure(
-			"Found %d ClusterGlobalEgressIP resources but only the default instance (%s) is supported",
+			"Found %d ClusterGlobalEgressIP resources but only the default instance (%q) is supported",
 			len(clusterGlobalEgress.Items), constants.ClusterGlobalEgressIPName)
 	}
 
@@ -99,7 +99,7 @@ func checkClusterGlobalEgressIps(cluster *cmd.Cluster, status reporter.Interface
 	}
 
 	if !foundDefaultResource {
-		status.Failure("Couldn't find the default ClusterGlobalEgressIP resource(%s)", constants.ClusterGlobalEgressIPName)
+		status.Failure("Couldn't find the default ClusterGlobalEgressIP resource(%q)", constants.ClusterGlobalEgressIPName)
 		return
 	}
 
@@ -126,7 +126,7 @@ func checkClusterGlobalEgressIps(cluster *cmd.Cluster, status reporter.Interface
 	}
 }
 
-func checkGlobalEgressIps(cluster *cmd.Cluster, status reporter.Interface) {
+func checkGlobalEgressIPs(cluster *cmd.Cluster, status reporter.Interface) {
 	globalEgressIps, err := cluster.SubmClient.SubmarinerV1().GlobalEgressIPs(
 		corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
@@ -152,14 +152,14 @@ func checkGlobalEgressIps(cluster *cmd.Cluster, status reporter.Interface) {
 			status.Failure("globalEgress %q is missing the %q status condition", gip.Name, submarinerv1.GlobalEgressIPAllocated)
 			continue
 		} else if condition.Status != metav1.ConditionTrue {
-			status.Failure("The allocation of global IPs for globalEgress %q failed with reason %q and message %q",
+			status.Failure("The allocation of global IPs for GlobalEgressIP %q failed with reason %q and message %q",
 				gip.Name, condition.Reason, condition.Message)
 			continue
 		}
 	}
 }
 
-func checkGlobalIngressIps(cluster *cmd.Cluster, status reporter.Interface) {
+func checkGlobalIngressIPs(cluster *cmd.Cluster, status reporter.Interface) {
 	mcsClient, err := mcsClientset.NewForConfig(cluster.Config)
 	if err != nil {
 		status.Failure("Error obtaining mcs client: %v", err)
@@ -211,12 +211,13 @@ func checkGlobalIngressIps(cluster *cmd.Cluster, status reporter.Interface) {
 
 		condition := meta.FindStatusCondition(globalIngress.Status.Conditions, string(submarinerv1.GlobalEgressIPAllocated))
 		if condition == nil {
-			status.Failure("globalIngress %q is missing the %q status condition", globalIngress.Name,
-				submarinerv1.GlobalEgressIPAllocated)
+			status.Failure("GlobalIngressIP %q associated with exported service \"%s/%s\" is missing"+
+				"the %q status condition", globalIngress.Name, ns, name, submarinerv1.GlobalEgressIPAllocated)
 			continue
 		} else if condition.Status != metav1.ConditionTrue {
-			status.Failure("The allocation of global IPs for globalIngress %q failed with reason %q and message %q",
-				globalIngress.Name, condition.Reason, condition.Message)
+			status.Failure("The allocation of global IPs for GlobalIngressIP %q associated with exported"+
+				"service \"%s/%s\" failed with reason %q and message %q",
+				globalIngress.Name, ns, name, condition.Reason, condition.Message)
 			continue
 		}
 
@@ -244,7 +245,7 @@ func verifyInternalService(cluster *cmd.Cluster, status reporter.Interface, ns, 
 
 	if svcs.Items[0].Spec.ExternalIPs[0] != globalIngress.Status.AllocatedIP {
 		status.Failure(
-			"The external IP (%s) for internal service associated with exported svc \"%s/%s\" doesn't"+
+			"The external IP (%s) for internal service associated with exported service \"%s/%s\" doesn't"+
 				"match allocated IP (%s) in GlobalIngressIP %q",
 			svcs.Items[0].Spec.ExternalIPs[0], ns, name, globalIngress.Status.AllocatedIP, globalIngress.Name)
 	}
