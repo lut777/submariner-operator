@@ -32,6 +32,7 @@ func discoverKubeOVNNetwork(dynClient dynamic.Interface, clientSet kubernetes.In
 		}
 		return nil, errors.WithMessage(err, "error obtaining the KubeOVN SUBNET resources")
 	}
+
 	serviceCIDRs, err := findClusterIPRange(clientSet)
 	if err != nil {
 		return nil, err
@@ -43,7 +44,7 @@ func discoverKubeOVNNetwork(dynClient dynamic.Interface, clientSet kubernetes.In
 func parseKubeOvnClusterNetwork(crs *unstructured.UnstructuredList, svcCIDR string) *ClusterNetwork {
 	result := &ClusterNetwork{}
 	result.PodCIDRs = []string{}
-	for i := range crs.Items {
+	for i, _ := range crs.Items {
 		podCIDR, err := parseKubeOvnPodCIDR(&crs.Items[i])
 		if err != nil {
 			continue
@@ -63,5 +64,6 @@ func parseKubeOvnPodCIDR(cr *unstructured.Unstructured) (string, error) {
 	} else if !found {
 		return "", fmt.Errorf("field cidr expected, but not found in subnet")
 	}
+
 	return podcidr, nil
 }
