@@ -20,15 +20,15 @@ var kubeOvnSubnetGVR = schema.GroupVersionResource{
 
 func discoverKubeOVNNetwork(dynClient dynamic.Interface, clientSet kubernetes.Interface) (*ClusterNetwork, error) {
 	if dynClient == nil {
-		return nil, nil
+		return nil, errors.New("dynamic client is nil")
 	}
 
 	crClient := dynClient.Resource(kubeOvnSubnetGVR)
+
 	crs, err := crClient.List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-
 		if apierrors.IsNotFound(err) {
-			return nil, nil
+			return nil, errors.New("KubeOVN subnet not found")
 		}
 
 		return nil, errors.WithMessage(err, "error obtaining the KubeOVN SUBNET resources")
@@ -63,10 +63,8 @@ func parseKubeOvnClusterNetwork(crs *unstructured.UnstructuredList, svcCIDR stri
 func parseKubeOvnPodCIDR(cr *unstructured.Unstructured) (string, error) {
 	podcidr, found, err := unstructured.NestedString(cr.Object, "spec", "cidrBlock")
 	if err != nil {
-
 		return "", errors.Wrap(err, "error retrieving cidr field")
 	} else if !found {
-
 		return "", errors.New("field cidr expected, but not found in subnet")
 	}
 
