@@ -20,15 +20,14 @@ var kubeOvnSubnetGVR = schema.GroupVersionResource{
 
 func discoverKubeOVNNetwork(dynClient dynamic.Interface, clientSet kubernetes.Interface) (*ClusterNetwork, error) {
 	if dynClient == nil {
-
 		return nil, nil
 	}
 
 	crClient := dynClient.Resource(kubeOvnSubnetGVR)
 	crs, err := crClient.List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		if apierrors.IsNotFound(err) {
 
+		if apierrors.IsNotFound(err) {
 			return nil, nil
 		}
 
@@ -37,7 +36,6 @@ func discoverKubeOVNNetwork(dynClient dynamic.Interface, clientSet kubernetes.In
 
 	serviceCIDRs, err := findClusterIPRange(clientSet)
 	if err != nil {
-
 		return nil, err
 	}
 
@@ -52,8 +50,10 @@ func parseKubeOvnClusterNetwork(crs *unstructured.UnstructuredList, svcCIDR stri
 		if err != nil {
 			continue
 		}
+
 		result.PodCIDRs = append(result.PodCIDRs, podCIDR)
 	}
+
 	result.ServiceCIDRs = []string{svcCIDR}
 	result.NetworkPlugin = constants.NetworkPluginCalico
 
