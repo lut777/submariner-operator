@@ -2,7 +2,6 @@ package network
 
 import (
 	"context"
-	"fmt"
 	"github.com/pkg/errors"
 	"github.com/submariner-io/submariner/pkg/routeagent_driver/constants"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,6 +20,7 @@ var kubeOvnSubnetGVR = schema.GroupVersionResource{
 
 func discoverKubeOVNNetwork(dynClient dynamic.Interface, clientSet kubernetes.Interface) (*ClusterNetwork, error) {
 	if dynClient == nil {
+
 		return nil, nil
 	}
 
@@ -28,13 +28,16 @@ func discoverKubeOVNNetwork(dynClient dynamic.Interface, clientSet kubernetes.In
 	crs, err := crClient.List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
+
 			return nil, nil
 		}
+
 		return nil, errors.WithMessage(err, "error obtaining the KubeOVN SUBNET resources")
 	}
 
 	serviceCIDRs, err := findClusterIPRange(clientSet)
 	if err != nil {
+
 		return nil, err
 	}
 
@@ -60,9 +63,11 @@ func parseKubeOvnClusterNetwork(crs *unstructured.UnstructuredList, svcCIDR stri
 func parseKubeOvnPodCIDR(cr *unstructured.Unstructured) (string, error) {
 	podcidr, found, err := unstructured.NestedString(cr.Object, "spec", "cidrBlock")
 	if err != nil {
+
 		return "", errors.Wrap(err, "error retrieving cidr field")
 	} else if !found {
-		return "", fmt.Errorf("field cidr expected, but not found in subnet")
+
+		return "", errors.New("field cidr expected, but not found in subnet")
 	}
 
 	return podcidr, nil
