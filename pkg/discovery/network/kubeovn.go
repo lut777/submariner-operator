@@ -15,7 +15,7 @@ import (
 var kubeOvnSubnetGVR = schema.GroupVersionResource{
 	Group:    "kubeovn.io",
 	Version:  "v1",
-	Resource: "Subnet",
+	Resource: "subnets",
 }
 
 func discoverKubeOVNNetwork(dynClient dynamic.Interface, clientSet kubernetes.Interface) (*ClusterNetwork, error) {
@@ -45,7 +45,7 @@ func discoverKubeOVNNetwork(dynClient dynamic.Interface, clientSet kubernetes.In
 func parseKubeOvnClusterNetwork(crs *unstructured.UnstructuredList, svcCIDR string) *ClusterNetwork {
 	result := &ClusterNetwork{}
 	result.PodCIDRs = []string{}
-	for i, _ := range crs.Items {
+	for i := range crs.Items {
 		podCIDR, err := parseKubeOvnPodCIDR(&crs.Items[i])
 		if err != nil {
 			continue

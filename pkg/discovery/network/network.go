@@ -21,6 +21,7 @@ package network
 import (
 	"context"
 	"fmt"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -30,6 +31,8 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 )
+
+var log = logf.Log.WithName("network_discover")
 
 type ClusterNetwork struct {
 	PodCIDRs       []string
@@ -69,6 +72,7 @@ func Discover(dynClient dynamic.Interface, clientSet kubernetes.Interface, opera
 	if err != nil {
 		return nil, err
 	}
+	discovery.Log(log)
 
 	if discovery != nil {
 		// TODO: The other branch of this if will not try to find the globalCIDRs
